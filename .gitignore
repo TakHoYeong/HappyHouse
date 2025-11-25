@@ -35,3 +35,21 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### React Frontend ###
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+frontend/.DS_Store
+
+### Database ###
+init-db/
+
+### Log files ###
+*.log
+logs/
+
+### macOS ###
+.DS_Store
