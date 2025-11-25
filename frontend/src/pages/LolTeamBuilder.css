@@ -1,0 +1,267 @@
+.lol-team-builder {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.lol-team-builder h1 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 30px;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+  border-bottom: 2px solid #ddd;
+}
+
+.tabs button {
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-size: 16px;
+  color: #666;
+  transition: all 0.3s;
+}
+
+.tabs button:hover {
+  color: #333;
+}
+
+.tabs button.active {
+  color: #4a90e2;
+  border-bottom-color: #4a90e2;
+  font-weight: bold;
+}
+
+.tab-content {
+  animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.form {
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form input, .form select, .form textarea {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.form textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.form button {
+  padding: 12px;
+  background: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+.form button:hover {
+  background: #357abd;
+}
+
+.player-list, .champion-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.player-card, .champion-card {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.player-card:hover, .champion-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.player-card h3, .champion-card h3 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.player-card p, .champion-card p {
+  margin: 5px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.team-creation {
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+}
+
+.player-selection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.player-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.player-checkbox:hover {
+  background: #f0f0f0;
+}
+
+.player-checkbox input {
+  cursor: pointer;
+}
+
+.create-team-btn {
+  width: 100%;
+  padding: 15px;
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+.create-team-btn:hover {
+  background: #45a049;
+}
+
+.teams-display {
+  margin-top: 30px;
+}
+
+.teams-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.delete-all-btn {
+  padding: 10px 20px;
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.delete-all-btn:hover {
+  background: #da190b;
+}
+
+.teams-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.team-card {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-left: 5px solid;
+}
+
+.team-card.blue {
+  border-left-color: #2196f3;
+}
+
+.team-card.red {
+  border-left-color: #f44336;
+}
+
+.team-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.team-card h3 {
+  margin: 0;
+  color: #333;
+}
+
+.team-card .delete-btn {
+  padding: 6px 12px;
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.3s;
+}
+
+.team-card .delete-btn:hover {
+  background: #da190b;
+}
+
+.team-card h4 {
+  margin: 10px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.team-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.team-card li {
+  padding: 8px;
+  margin: 5px 0;
+  background: #f9f9f9;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.team-card p {
+  color: #666;
+  margin: 5px 0;
+}

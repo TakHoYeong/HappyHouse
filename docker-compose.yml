@@ -1,21 +1,42 @@
 version: '3.8'
 
 services:
-  mariadb:
+  # MariaDB for User Service
+  user-db:
     image: mariadb:11.2
-    container_name: happyhouse-mariadb
+    container_name: happyhouse-user-db
+    restart: always
+    ports:
+      - "3307:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: root123
+      MARIADB_DATABASE: user_service
+      MARIADB_USER: happyhouse
+      MARIADB_PASSWORD: happyhouse123
+      TZ: Asia/Seoul
+    volumes:
+      - user_db_data:/var/lib/mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    networks:
+      - happyhouse-network
+
+  # MariaDB for LOL Team Builder Service
+  lol-db:
+    image: mariadb:11.2
+    container_name: happyhouse-lol-db
     restart: always
     ports:
       - "3306:3306"
     environment:
       MARIADB_ROOT_PASSWORD: root123
-      MARIADB_DATABASE: happyhouse
+      MARIADB_DATABASE: lol_team_builder
       MARIADB_USER: happyhouse
       MARIADB_PASSWORD: happyhouse123
       TZ: Asia/Seoul
     volumes:
-      - mariadb_data:/var/lib/mysql
-      - ./init-db:/docker-entrypoint-initdb.d
+      - lol_db_data:/var/lib/mysql
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
@@ -23,7 +44,9 @@ services:
       - happyhouse-network
 
 volumes:
-  mariadb_data:
+  user_db_data:
+    driver: local
+  lol_db_data:
     driver: local
 
 networks:
