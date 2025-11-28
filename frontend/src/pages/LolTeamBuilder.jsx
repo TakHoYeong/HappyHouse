@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import './LolTeamBuilder.css';
 
-const API_BASE_URL = 'http://localhost:108080/api/lol';
+const API_BASE_URL = 'http://localhost:8080';
 
 const POSITIONS = [
   { value: 'TOP', label: '탑' },
