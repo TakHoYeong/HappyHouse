@@ -2,40 +2,48 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import './LolTeamBuilder.css';
 
-const API_BASE_URL = 'http://localhost:8080/api/lol';
+const API_BASE_URL = 'http://localhost:108080/api/lol';
+
+const POSITIONS = [
+  { value: 'TOP', label: '탑' },
+  { value: 'JUNGLE', label: '정글' },
+  { value: 'MID', label: '미드' },
+  { value: 'ADC', label: '원딜' },
+  { value: 'SUPPORT', label: '서폿' }
+];
+
+const TIERS = [
+  { value: 'IRON', label: '아이언' },
+  { value: 'BRONZE', label: '브론즈' },
+  { value: 'SILVER', label: '실버' },
+  { value: 'GOLD', label: '골드' },
+  { value: 'PLATINUM', label: '플래티넘' },
+  { value: 'EMERALD', label: '에메랄드' },
+  { value: 'DIAMOND', label: '다이아' },
+  { value: 'MASTER', label: '마스터' },
+  { value: 'GRANDMASTER', label: '그랜드마스터' },
+  { value: 'CHALLENGER', label: '챌린저' }
+];
 
 function LolTeamBuilder() {
   const [players, setPlayers] = useState([]);
-  const [champions, setChampions] = useState([]);
   const [teams, setTeams] = useState([]);
-  const [activeTab, setActiveTab] = useState('players');
+  const [showPlayerForm, setShowPlayerForm] = useState(false);
 
-  // Player Form State
   const [newPlayer, setNewPlayer] = useState({
     summonerName: '',
     realName: '',
     preferredPosition: 'TOP',
-    secondaryPosition: 'JUNGLE',
+    positionLocked: false,
+    availablePositions: [],
+    unavailablePositions: [],
+    tier: 'SILVER',
     skillLevel: 5,
     notes: ''
   });
 
-  // Champion Form State
-  const [newChampion, setNewChampion] = useState({
-    name: '',
-    koreanName: '',
-    primaryPosition: 'TOP',
-    secondaryPosition: 'JUNGLE',
-    difficulty: 5,
-    description: ''
-  });
-
-  // Selected players for team creation
-  const [selectedPlayers, setSelectedPlayers] = useState([]);
-
   useEffect(() => {
     fetchPlayers();
-    fetchChampions();
     fetchTeams();
   }, []);
 
@@ -45,15 +53,6 @@ function LolTeamBuilder() {
       setPlayers(response.data);
     } catch (error) {
       console.error('Error fetching players:', error);
-    }
-  };
-
-  const fetchChampions = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/champions`);
-      setChampions(response.data);
-    } catch (error) {
-      console.error('Error fetching champions:', error);
     }
   };
 
@@ -74,11 +73,15 @@ function LolTeamBuilder() {
         summonerName: '',
         realName: '',
         preferredPosition: 'TOP',
-        secondaryPosition: 'JUNGLE',
+        positionLocked: false,
+        availablePositions: [],
+        unavailablePositions: [],
+        tier: 'SILVER',
         skillLevel: 5,
         notes: ''
       });
       fetchPlayers();
+      setShowPlayerForm(false);
       alert('플레이어가 등록되었습니다!');
     } catch (error) {
       console.error('Error creating player:', error);
@@ -86,295 +89,282 @@ function LolTeamBuilder() {
     }
   };
 
-  const handleCreateChampion = async (e) => {
-    e.preventDefault();
+  const handleDeletePlayer = async (playerId) => {
+    if (!window.confirm('정말 이 플레이어를 삭제하시겠습니까?')) {
+      return;
+    }
     try {
-      await axios.post(`${API_BASE_URL}/champions`, newChampion);
-      setNewChampion({
-        name: '',
-        koreanName: '',
-        primaryPosition: 'TOP',
-        secondaryPosition: 'JUNGLE',
-        difficulty: 5,
-        description: ''
-      });
-      fetchChampions();
-      alert('챔피언이 등록되었습니다!');
+      await axios.delete(`${API_BASE_URL}/players/${playerId}`);
+      fetchPlayers();
+      alert('플레이어가 삭제되었습니다.');
     } catch (error) {
-      console.error('Error creating champion:', error);
-      alert('챔피언 등록에 실패했습니다.');
+      console.error('Error deleting player:', error);
+      alert('플레이어 삭제에 실패했습니다.');
     }
   };
 
-  const handlePlayerSelection = (playerId) => {
-    setSelectedPlayers(prev => {
-      if (prev.includes(playerId)) {
-        return prev.filter(id => id !== playerId);
-      } else {
-        return [...prev, playerId];
-      }
-    });
-  };
-
   const handleCreateTeams = async () => {
-    if (selectedPlayers.length < 2) {
-      alert('최소 2명의 플레이어를 선택해주세요.');
+    if (players.length !== 10) {
+      alert('정확히 10명의 플레이어가 필요합니다. 현재: ' + players.length + '명');
       return;
     }
 
     try {
+      const playerIds = players.map(p => p.id);
       await axios.post(`${API_BASE_URL}/teams/create`, {
-        playerIds: selectedPlayers,
+        playerIds: playerIds,
         autoBalance: true
       });
-      setSelectedPlayers([]);
       fetchTeams();
       alert('팀이 생성되었습니다!');
     } catch (error) {
       console.error('Error creating teams:', error);
-      alert('팀 생성에 실패했습니다.');
-    }
-  };
-
-  const handleDeleteTeam = async (teamId) => {
-    if (!confirm('정말 이 팀을 삭제하시겠습니까?')) {
-      return;
-    }
-
-    try {
-      await axios.delete(`${API_BASE_URL}/teams/${teamId}`);
-      fetchTeams();
-      alert('팀이 삭제되었습니다.');
-    } catch (error) {
-      console.error('Error deleting team:', error);
-      alert('팀 삭제에 실패했습니다.');
+      alert('팀 생성에 실패했습니다: ' + (error.response?.data?.message || error.message));
     }
   };
 
   const handleDeleteAllTeams = async () => {
-    if (!confirm('정말 모든 팀을 삭제하시겠습니까?')) {
+    if (!window.confirm('정말 모든 팀을 삭제하시겠습니까?')) {
       return;
     }
-
     try {
       await axios.delete(`${API_BASE_URL}/teams`);
       fetchTeams();
       alert('모든 팀이 삭제되었습니다.');
     } catch (error) {
-      console.error('Error deleting all teams:', error);
+      console.error('Error deleting teams:', error);
       alert('팀 삭제에 실패했습니다.');
     }
   };
 
-  const positions = ['TOP', 'JUNGLE', 'MID', 'ADC', 'SUPPORT'];
+  const handlePositionCheckbox = (position, type) => {
+    setNewPlayer(prev => {
+      const list = type === 'available' ? prev.availablePositions : prev.unavailablePositions;
+      const otherList = type === 'available' ? prev.unavailablePositions : prev.availablePositions;
+
+      if (list.includes(position)) {
+        return {
+          ...prev,
+          [type === 'available' ? 'availablePositions' : 'unavailablePositions']:
+            list.filter(p => p !== position)
+        };
+      } else {
+        // 다른 리스트에 있으면 제거
+        const cleanedOtherList = otherList.filter(p => p !== position);
+        return {
+          ...prev,
+          [type === 'available' ? 'availablePositions' : 'unavailablePositions']: [...list, position],
+          [type === 'available' ? 'unavailablePositions' : 'availablePositions']: cleanedOtherList
+        };
+      }
+    });
+  };
+
+  const getTierLabel = (tier) => {
+    return TIERS.find(t => t.value === tier)?.label || tier;
+  };
+
+  const getPositionLabel = (position) => {
+    return POSITIONS.find(p => p.value === position)?.label || position;
+  };
 
   return (
     <div className="lol-team-builder">
-      <h1>LOL Team Builder</h1>
+      <header className="header">
+        <h1>🎮 LOL 팀 밸런서</h1>
+        <p>10명의 플레이어를 균형잡힌 5대5 팀으로 나눠보세요!</p>
+      </header>
 
-      <div className="tabs">
-        <button
-          className={activeTab === 'players' ? 'active' : ''}
-          onClick={() => setActiveTab('players')}
-        >
-          플레이어 관리
-        </button>
-        <button
-          className={activeTab === 'champions' ? 'active' : ''}
-          onClick={() => setActiveTab('champions')}
-        >
-          챔피언 관리
-        </button>
-        <button
-          className={activeTab === 'teams' ? 'active' : ''}
-          onClick={() => setActiveTab('teams')}
-        >
-          팀 생성
-        </button>
-      </div>
-
-      {activeTab === 'players' && (
-        <div className="tab-content">
-          <h2>플레이어 등록</h2>
-          <form onSubmit={handleCreatePlayer} className="form">
-            <input
-              type="text"
-              placeholder="소환사명"
-              value={newPlayer.summonerName}
-              onChange={(e) => setNewPlayer({...newPlayer, summonerName: e.target.value})}
-              required
-            />
-            <input
-              type="text"
-              placeholder="실명"
-              value={newPlayer.realName}
-              onChange={(e) => setNewPlayer({...newPlayer, realName: e.target.value})}
-            />
-            <select
-              value={newPlayer.preferredPosition}
-              onChange={(e) => setNewPlayer({...newPlayer, preferredPosition: e.target.value})}
+      <div className="main-content">
+        <div className="left-panel">
+          <div className="panel-header">
+            <h2>플레이어 목록 ({players.length}/10)</h2>
+            <button
+              className="btn-primary"
+              onClick={() => setShowPlayerForm(!showPlayerForm)}
             >
-              {positions.map(pos => <option key={pos} value={pos}>{pos}</option>)}
-            </select>
-            <select
-              value={newPlayer.secondaryPosition}
-              onChange={(e) => setNewPlayer({...newPlayer, secondaryPosition: e.target.value})}
-            >
-              {positions.map(pos => <option key={pos} value={pos}>{pos}</option>)}
-            </select>
-            <div>
-              <label>실력 레벨: {newPlayer.skillLevel}</label>
-              <input
-                type="range"
-                min="1"
-                max="10"
-                value={newPlayer.skillLevel}
-                onChange={(e) => setNewPlayer({...newPlayer, skillLevel: parseInt(e.target.value)})}
-              />
-            </div>
-            <textarea
-              placeholder="메모"
-              value={newPlayer.notes}
-              onChange={(e) => setNewPlayer({...newPlayer, notes: e.target.value})}
-            />
-            <button type="submit">플레이어 등록</button>
-          </form>
-
-          <h2>플레이어 목록</h2>
-          <div className="player-list">
-            {players.map(player => (
-              <div key={player.id} className="player-card">
-                <h3>{player.summonerName}</h3>
-                <p>실명: {player.realName || 'N/A'}</p>
-                <p>선호 포지션: {player.preferredPosition}</p>
-                <p>보조 포지션: {player.secondaryPosition}</p>
-                <p>실력: {player.skillLevel}/10</p>
-                {player.notes && <p>메모: {player.notes}</p>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'champions' && (
-        <div className="tab-content">
-          <h2>챔피언 등록</h2>
-          <form onSubmit={handleCreateChampion} className="form">
-            <input
-              type="text"
-              placeholder="챔피언 이름 (영문)"
-              value={newChampion.name}
-              onChange={(e) => setNewChampion({...newChampion, name: e.target.value})}
-              required
-            />
-            <input
-              type="text"
-              placeholder="챔피언 이름 (한글)"
-              value={newChampion.koreanName}
-              onChange={(e) => setNewChampion({...newChampion, koreanName: e.target.value})}
-            />
-            <select
-              value={newChampion.primaryPosition}
-              onChange={(e) => setNewChampion({...newChampion, primaryPosition: e.target.value})}
-            >
-              {positions.map(pos => <option key={pos} value={pos}>{pos}</option>)}
-            </select>
-            <select
-              value={newChampion.secondaryPosition}
-              onChange={(e) => setNewChampion({...newChampion, secondaryPosition: e.target.value})}
-            >
-              {positions.map(pos => <option key={pos} value={pos}>{pos}</option>)}
-            </select>
-            <div>
-              <label>난이도: {newChampion.difficulty}</label>
-              <input
-                type="range"
-                min="1"
-                max="10"
-                value={newChampion.difficulty}
-                onChange={(e) => setNewChampion({...newChampion, difficulty: parseInt(e.target.value)})}
-              />
-            </div>
-            <textarea
-              placeholder="설명"
-              value={newChampion.description}
-              onChange={(e) => setNewChampion({...newChampion, description: e.target.value})}
-            />
-            <button type="submit">챔피언 등록</button>
-          </form>
-
-          <h2>챔피언 목록</h2>
-          <div className="champion-list">
-            {champions.map(champion => (
-              <div key={champion.id} className="champion-card">
-                <h3>{champion.name}</h3>
-                <p>한글명: {champion.koreanName || 'N/A'}</p>
-                <p>주 포지션: {champion.primaryPosition}</p>
-                <p>보조 포지션: {champion.secondaryPosition}</p>
-                <p>난이도: {champion.difficulty}/10</p>
-                {champion.description && <p>설명: {champion.description}</p>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'teams' && (
-        <div className="tab-content">
-          <h2>팀 생성</h2>
-          <div className="team-creation">
-            <h3>플레이어 선택</h3>
-            <div className="player-selection">
-              {players.map(player => (
-                <label key={player.id} className="player-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={selectedPlayers.includes(player.id)}
-                    onChange={() => handlePlayerSelection(player.id)}
-                  />
-                  {player.summonerName} ({player.preferredPosition}) - 실력: {player.skillLevel}/10
-                </label>
-              ))}
-            </div>
-            <button onClick={handleCreateTeams} className="create-team-btn">
-              팀 생성 (선택: {selectedPlayers.length}명)
+              {showPlayerForm ? '취소' : '+ 플레이어 추가'}
             </button>
           </div>
 
-          <div className="teams-display">
-            <div className="teams-header">
-              <h2>생성된 팀</h2>
+          {showPlayerForm && (
+            <form onSubmit={handleCreatePlayer} className="player-form">
+              <div className="form-group">
+                <label>이름 *</label>
+                <input
+                  type="text"
+                  placeholder="이름 입력"
+                  value={newPlayer.summonerName}
+                  onChange={(e) => setNewPlayer({...newPlayer, summonerName: e.target.value})}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>티어 *</label>
+                <select
+                  value={newPlayer.tier}
+                  onChange={(e) => setNewPlayer({...newPlayer, tier: e.target.value})}
+                  className="tier-select"
+                >
+                  {TIERS.map(tier => (
+                    <option key={tier.value} value={tier.value}>{tier.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="position-label">
+                  주 포지션 *
+                  <label className="checkbox-inline">
+                    <input
+                      type="checkbox"
+                      checked={newPlayer.positionLocked}
+                      onChange={(e) => setNewPlayer({...newPlayer, positionLocked: e.target.checked})}
+                    />
+                    포지션 고정
+                  </label>
+                </label>
+                <select
+                  value={newPlayer.preferredPosition}
+                  onChange={(e) => setNewPlayer({...newPlayer, preferredPosition: e.target.value})}
+                >
+                  {POSITIONS.map(pos => (
+                    <option key={pos.value} value={pos.value}>{pos.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>가능한 포지션</label>
+                <div className="checkbox-group">
+                  {POSITIONS.map(pos => (
+                    <label key={pos.value} className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={newPlayer.availablePositions.includes(pos.value)}
+                        onChange={() => handlePositionCheckbox(pos.value, 'available')}
+                      />
+                      {pos.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>불가능한 포지션</label>
+                <div className="checkbox-group">
+                  {POSITIONS.map(pos => (
+                    <label key={pos.value} className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={newPlayer.unavailablePositions.includes(pos.value)}
+                        onChange={() => handlePositionCheckbox(pos.value, 'unavailable')}
+                      />
+                      {pos.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-actions">
+                <button type="submit" className="btn-primary">등록</button>
+                <button type="button" className="btn-secondary" onClick={() => setShowPlayerForm(false)}>
+                  취소
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div className="player-list">
+            {players.map(player => (
+              <div key={player.id} className="player-card">
+                <div className="player-header">
+                  <h3>{player.summonerName}</h3>
+                  <button
+                    className="btn-delete"
+                    onClick={() => handleDeletePlayer(player.id)}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="player-info">
+                  <span className={`tier-badge tier-${player.tier?.toLowerCase()}`}>
+                    {getTierLabel(player.tier)}
+                  </span>
+                  <span className="position-badge">
+                    {getPositionLabel(player.preferredPosition)}
+                    {player.positionLocked && ' 🔒'}
+                  </span>
+                </div>
+                {player.availablePositions?.length > 0 && (
+                  <div className="position-info">
+                    <small>가능: {player.availablePositions.map(p => getPositionLabel(p)).join(', ')}</small>
+                  </div>
+                )}
+                {player.unavailablePositions?.length > 0 && (
+                  <div className="position-info unavailable">
+                    <small>불가: {player.unavailablePositions.map(p => getPositionLabel(p)).join(', ')}</small>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="right-panel">
+          <div className="panel-header">
+            <h2>팀 구성</h2>
+            <div className="team-actions">
+              <button
+                className="btn-create-team"
+                onClick={handleCreateTeams}
+                disabled={players.length !== 10}
+              >
+                🎯 팀 생성
+              </button>
               {teams.length > 0 && (
-                <button onClick={handleDeleteAllTeams} className="delete-all-btn">
-                  모든 팀 삭제
+                <button
+                  className="btn-delete-all"
+                  onClick={handleDeleteAllTeams}
+                >
+                  전체 삭제
                 </button>
               )}
             </div>
+          </div>
+
+          {teams.length === 0 ? (
+            <div className="empty-state">
+              <p>팀이 생성되지 않았습니다.</p>
+              <p>10명의 플레이어를 등록한 후 팀을 생성하세요!</p>
+            </div>
+          ) : (
             <div className="teams-container">
               {teams.map(team => (
-                <div key={team.id} className={`team-card ${team.color.toLowerCase()}`}>
+                <div key={team.id} className={`team-card team-${team.color.toLowerCase()}`}>
                   <div className="team-header">
                     <h3>{team.name}</h3>
-                    <button onClick={() => handleDeleteTeam(team.id)} className="delete-btn">
-                      삭제
-                    </button>
+                    <span className="team-avg">
+                      평균: {team.averageSkillLevel?.toFixed(1) || 'N/A'}
+                    </span>
                   </div>
-                  <p>평균 실력: {team.averageSkillLevel?.toFixed(2)}/10</p>
-                  <h4>팀 구성:</h4>
-                  <ul>
-                    {team.members.map(member => (
-                      <li key={member.id}>
-                        {member.assignedPosition}: {member.summonerName}
-                        {member.championName && ` (${member.championName})`}
-                      </li>
+                  <div className="team-members">
+                    {team.members?.map(member => (
+                      <div key={member.id} className="member-item">
+                        <span className="member-position">
+                          {getPositionLabel(member.assignedPosition)}
+                        </span>
+                        <span className="member-name">{member.summonerName}</span>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

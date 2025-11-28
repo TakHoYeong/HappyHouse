@@ -51,46 +51,102 @@ public class TeamService {
     }
 
     private List<TeamDto> createAutoBalancedTeams(List<Player> players) {
-        // 플레이어들을 스킬 레벨 순으로 정렬
-        List<Player> sortedPlayers = new ArrayList<>(players);
-        sortedPlayers.sort(Comparator.comparing(Player::getSkillLevel).reversed());
+        if (players.size() != 10) {
+            throw new RuntimeException("정확히 10명의 플레이어가 필요합니다. 현재: " + players.size() + "명");
+        }
 
         // 두 팀 생성
         Team blueTeam = Team.builder()
-                .name("Blue Team")
+                .name("블루팀")
                 .color("BLUE")
                 .members(new ArrayList<>())
                 .build();
 
         Team redTeam = Team.builder()
-                .name("Red Team")
+                .name("레드팀")
                 .color("RED")
                 .members(new ArrayList<>())
                 .build();
 
-        // 포지션별로 플레이어를 그룹화
-        Map<Champion.Position, List<Player>> playersByPosition = new HashMap<>();
-        for (Champion.Position position : Champion.Position.values()) {
-            playersByPosition.put(position, new ArrayList<>());
+        // 각 팀별 포지션 배정 맵
+        Map<Team, Map<Champion.Position, Player>> teamAssignments = new HashMap<>();
+        teamAssignments.put(blueTeam, new HashMap<>());
+        teamAssignments.put(redTeam, new HashMap<>());
+
+        // 사용되지 않은 플레이어 목록
+        Set<Player> unassignedPlayers = new HashSet<>(players);
+
+        // 1단계: 포지션이 고정된 플레이어를 먼저 배치
+        List<Player> lockedPlayers = players.stream()
+                .filter(Player::getPositionLocked)
+                .sorted(Comparator.comparing((Player p) -> p.getTier().getValue()).reversed())
+                .collect(Collectors.toList());
+
+        for (int i = 0; i < lockedPlayers.size(); i++) {
+            Player player = lockedPlayers.get(i);
+            Champion.Position position = player.getPreferredPosition();
+
+            // 블루팀과 레드팀 중 해당 포지션이 비어있고 티어 합이 더 낮은 팀에 배치
+            Team targetTeam = selectTeamForPosition(blueTeam, redTeam, position, teamAssignments);
+
+            if (targetTeam != null) {
+                teamAssignments.get(targetTeam).put(position, player);
+                unassignedPlayers.remove(player);
+            }
         }
 
-        for (Player player : sortedPlayers) {
-            playersByPosition.get(player.getPreferredPosition()).add(player);
+        // 2단계: 남은 플레이어들을 티어 순으로 정렬하여 배치
+        List<Player> remainingPlayers = new ArrayList<>(unassignedPlayers);
+        remainingPlayers.sort(Comparator.comparing((Player p) -> p.getTier().getValue()).reversed());
+
+        for (Player player : remainingPlayers) {
+            boolean assigned = false;
+
+            // 주 포지션 시도
+            Team targetTeam = selectTeamForPosition(blueTeam, redTeam, player.getPreferredPosition(), teamAssignments);
+            if (targetTeam != null && canPlayPosition(player, player.getPreferredPosition())) {
+                teamAssignments.get(targetTeam).put(player.getPreferredPosition(), player);
+                assigned = true;
+            }
+
+            // 가능한 포지션 시도
+            if (!assigned && player.getAvailablePositions() != null) {
+                for (Champion.Position position : Champion.Position.values()) {
+                    if (player.getAvailablePositions().contains(position)) {
+                        targetTeam = selectTeamForPosition(blueTeam, redTeam, position, teamAssignments);
+                        if (targetTeam != null && canPlayPosition(player, position)) {
+                            teamAssignments.get(targetTeam).put(position, player);
+                            assigned = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // 그래도 안되면 빈 포지션 아무데나 배치
+            if (!assigned) {
+                for (Champion.Position position : Champion.Position.values()) {
+                    targetTeam = selectTeamForPosition(blueTeam, redTeam, position, teamAssignments);
+                    if (targetTeam != null && canPlayPosition(player, position)) {
+                        teamAssignments.get(targetTeam).put(position, player);
+                        assigned = true;
+                        break;
+                    }
+                }
+            }
         }
 
-        // 각 포지션별로 플레이어를 두 팀에 배분
-        for (Champion.Position position : Champion.Position.values()) {
-            List<Player> positionPlayers = playersByPosition.get(position);
-            for (int i = 0; i < positionPlayers.size(); i++) {
-                Player player = positionPlayers.get(i);
-                Team targetTeam = (i % 2 == 0) ? blueTeam : redTeam;
+        // 3단계: 팀 멤버 생성
+        for (Map.Entry<Team, Map<Champion.Position, Player>> teamEntry : teamAssignments.entrySet()) {
+            Team team = teamEntry.getKey();
+            Map<Champion.Position, Player> assignments = teamEntry.getValue();
 
+            for (Map.Entry<Champion.Position, Player> assignment : assignments.entrySet()) {
                 TeamMember member = TeamMember.builder()
-                        .player(player)
-                        .assignedPosition(position)
+                        .player(assignment.getValue())
+                        .assignedPosition(assignment.getKey())
                         .build();
-
-                targetTeam.addMember(member);
+                team.addMember(member);
             }
         }
 
@@ -102,6 +158,42 @@ public class TeamService {
                 TeamDto.from(savedBlueTeam),
                 TeamDto.from(savedRedTeam)
         );
+    }
+
+    private Team selectTeamForPosition(Team blueTeam, Team redTeam, Champion.Position position,
+                                       Map<Team, Map<Champion.Position, Player>> teamAssignments) {
+        boolean blueHasPosition = teamAssignments.get(blueTeam).containsKey(position);
+        boolean redHasPosition = teamAssignments.get(redTeam).containsKey(position);
+
+        if (blueHasPosition && redHasPosition) {
+            return null; // 두 팀 모두 해당 포지션이 차있음
+        }
+
+        if (blueHasPosition) {
+            return redTeam;
+        }
+
+        if (redHasPosition) {
+            return blueTeam;
+        }
+
+        // 두 팀 모두 비어있으면 티어 합이 더 낮은 팀에 배치
+        int blueTierSum = teamAssignments.get(blueTeam).values().stream()
+                .mapToInt(p -> p.getTier().getValue())
+                .sum();
+        int redTierSum = teamAssignments.get(redTeam).values().stream()
+                .mapToInt(p -> p.getTier().getValue())
+                .sum();
+
+        return blueTierSum <= redTierSum ? blueTeam : redTeam;
+    }
+
+    private boolean canPlayPosition(Player player, Champion.Position position) {
+        if (player.getUnavailablePositions() != null &&
+            player.getUnavailablePositions().contains(position)) {
+            return false;
+        }
+        return true;
     }
 
     @Transactional
