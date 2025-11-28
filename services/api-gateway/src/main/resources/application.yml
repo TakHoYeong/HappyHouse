@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 108080
 
 spring:
   application:
@@ -8,7 +8,7 @@ spring:
     gateway:
       routes:
         - id: lol-team-builder
-          uri: http://localhost:8081
+          uri: http://localhost:108081
           predicates:
             - Path=/api/lol/**
           filters:

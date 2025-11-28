@@ -56,6 +56,20 @@ public class Champion {
     }
 
     public enum Position {
-        TOP, JUNGLE, MID, ADC, SUPPORT
+        TOP("탑"),
+        JUNGLE("정글"),
+        MID("미드"),
+        ADC("원딜"),
+        SUPPORT("서폿");
+
+        private final String koreanName;
+
+        Position(String koreanName) {
+            this.koreanName = koreanName;
+        }
+
+        public String getKoreanName() {
+            return koreanName;
+        }
     }
 }
