@@ -28,8 +28,11 @@ const TIERS = [
 function LolTeamBuilder() {
   const [players, setPlayers] = useState([]);
   const [teams, setTeams] = useState([]);
+  const [teamOptions, setTeamOptions] = useState([]);
   const [showPlayerForm, setShowPlayerForm] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null);
+  const [selectedTeamOption, setSelectedTeamOption] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   const [newPlayer, setNewPlayer] = useState({
     summonerName: '',
@@ -153,15 +156,63 @@ function LolTeamBuilder() {
 
     try {
       const playerIds = players.map(p => p.id);
+      const response = await axios.post(`${API_BASE_URL}/teams/create/multiple`, {
+        playerIds: playerIds,
+        autoBalance: true
+      });
+      setTeamOptions(response.data);
+      setTeams([]);
+      alert('여러 팀 구성 옵션이 생성되었습니다!');
+    } catch (error) {
+      console.error('Error creating teams:', error);
+      alert('팀 생성에 실패했습니다: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
+  const handleCreateRandomTeams = async () => {
+    if (players.length !== 10) {
+      alert('정확히 10명의 플레이어가 필요합니다. 현재: ' + players.length + '명');
+      return;
+    }
+
+    try {
+      const playerIds = players.map(p => p.id);
+      const response = await axios.post(`${API_BASE_URL}/teams/create/random`, {
+        playerIds: playerIds,
+        autoBalance: false
+      });
+      setTeams(response.data);
+      setTeamOptions([]);
+      fetchTeams();
+      alert('랜덤 팀이 생성되었습니다!');
+    } catch (error) {
+      console.error('Error creating random teams:', error);
+      alert('랜덤 팀 생성에 실패했습니다: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
+  const handleSelectTeamOption = (option) => {
+    setSelectedTeamOption(option);
+    setShowModal(true);
+  };
+
+  const handleSaveTeamOption = async () => {
+    if (!selectedTeamOption) return;
+
+    try {
+      // 선택된 팀 옵션을 DB에 저장
+      const playerIds = players.map(p => p.id);
       await axios.post(`${API_BASE_URL}/teams/create`, {
         playerIds: playerIds,
         autoBalance: true
       });
       fetchTeams();
-      alert('팀이 생성되었습니다!');
+      setTeamOptions([]);
+      setShowModal(false);
+      alert('팀이 저장되었습니다!');
     } catch (error) {
-      console.error('Error creating teams:', error);
-      alert('팀 생성에 실패했습니다: ' + (error.response?.data?.message || error.message));
+      console.error('Error saving team:', error);
+      alert('팀 저장에 실패했습니다.');
     }
   };
 
@@ -396,6 +447,13 @@ function LolTeamBuilder() {
               >
                 🎯 팀 생성
               </button>
+              <button
+                className="btn-random-team"
+                onClick={handleCreateRandomTeams}
+                disabled={players.length !== 10}
+              >
+                🎲 랜덤생성
+              </button>
               {teams.length > 0 && (
                 <button
                   className="btn-delete-all"
@@ -407,7 +465,36 @@ function LolTeamBuilder() {
             </div>
           </div>
 
-          {teams.length === 0 ? (
+          {teamOptions.length > 0 ? (
+            <div>
+              <p style={{ textAlign: 'center', marginBottom: '15px', color: '#2d3748', fontWeight: 600 }}>
+                팀 구성 옵션을 클릭하여 확인하세요
+              </p>
+              <div className="team-options-container">
+                {teamOptions.map((option, index) => (
+                  <div
+                    key={index}
+                    className="team-option-card"
+                    onClick={() => handleSelectTeamOption(option)}
+                  >
+                    <h4>옵션 {index + 1}</h4>
+                    <div className="option-preview">
+                      {option.map((team, teamIndex) => (
+                        <div key={teamIndex} className="option-team">
+                          <span className={`option-team-name ${team.color.toLowerCase()}`}>
+                            {team.name}
+                          </span>
+                          <span className="option-avg">
+                            평균: {team.averageSkillLevel?.toFixed(1) || 'N/A'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : teams.length === 0 ? (
             <div className="empty-state">
               <p>팀이 생성되지 않았습니다.</p>
               <p>10명의 플레이어를 등록한 후 팀을 생성하세요!</p>
@@ -438,6 +525,49 @@ function LolTeamBuilder() {
           )}
         </div>
       </div>
+
+      {showModal && selectedTeamOption && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>팀 구성 미리보기</h2>
+              <button className="modal-close" onClick={() => setShowModal(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="modal-teams">
+                {selectedTeamOption.map((team, index) => (
+                  <div key={index} className={`modal-team-card team-${team.color.toLowerCase()}`}>
+                    <div className="team-header">
+                      <h3>{team.name}</h3>
+                      <span className="team-avg">
+                        평균: {team.averageSkillLevel?.toFixed(1) || 'N/A'}
+                      </span>
+                    </div>
+                    <div className="team-members">
+                      {team.members?.map((member, memberIndex) => (
+                        <div key={memberIndex} className="member-item">
+                          <span className="member-position">
+                            {getPositionLabel(member.assignedPosition)}
+                          </span>
+                          <span className="member-name">{member.summonerName}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-primary" onClick={handleSaveTeamOption}>
+                이 구성으로 확정
+              </button>
+              <button className="btn-secondary" onClick={() => setShowModal(false)}>
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

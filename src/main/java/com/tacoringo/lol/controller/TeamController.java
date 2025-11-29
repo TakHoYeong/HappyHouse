@@ -33,6 +33,18 @@ public class TeamController {
         return ResponseEntity.status(HttpStatus.CREATED).body(teams);
     }
 
+    @PostMapping("/create/multiple")
+    public ResponseEntity<List<List<TeamDto>>> createMultipleTeamOptions(@RequestBody CreateTeamRequest request) {
+        List<List<TeamDto>> teamOptions = teamService.createMultipleTeamOptions(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(teamOptions);
+    }
+
+    @PostMapping("/create/random")
+    public ResponseEntity<List<TeamDto>> createRandomTeams(@RequestBody CreateTeamRequest request) {
+        List<TeamDto> teams = teamService.createRandomTeams(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(teams);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTeam(@PathVariable Long id) {
         teamService.deleteTeam(id);
