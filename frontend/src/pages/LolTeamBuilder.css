@@ -648,6 +648,98 @@
   border-top: 2px solid #e2e8f0;
 }
 
+/* 팀 통계 */
+.team-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-end;
+}
+
+.balance-status {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: inline-block;
+}
+
+.balance-status.status-약우세 {
+  background: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+.balance-status.status-우세 {
+  background: rgba(255, 215, 0, 0.4);
+  color: #fff;
+}
+
+.balance-status.status-강우세 {
+  background: rgba(255, 165, 0, 0.5);
+  color: #fff;
+}
+
+.balance-status.status-천국 {
+  background: rgba(0, 255, 127, 0.4);
+  color: #fff;
+  animation: glow 1.5s ease-in-out infinite;
+}
+
+.balance-status.status-지옥 {
+  background: rgba(255, 0, 0, 0.5);
+  color: #fff;
+  animation: glow 1.5s ease-in-out infinite;
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+  }
+}
+
+.balance-status-small {
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.balance-status-small.status-약우세 {
+  background: rgba(100, 100, 100, 0.3);
+  color: #2d3748;
+}
+
+.balance-status-small.status-우세 {
+  background: rgba(255, 215, 0, 0.3);
+  color: #2d3748;
+}
+
+.balance-status-small.status-강우세 {
+  background: rgba(255, 165, 0, 0.4);
+  color: #2d3748;
+}
+
+.balance-status-small.status-천국 {
+  background: rgba(0, 255, 127, 0.3);
+  color: #2d3748;
+}
+
+.balance-status-small.status-지옥 {
+  background: rgba(255, 0, 0, 0.4);
+  color: #2d3748;
+}
+
+.option-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-end;
+}
+
 /* 반응형 */
 @media (max-width: 1024px) {
   .main-content {

@@ -484,9 +484,16 @@ function LolTeamBuilder() {
                           <span className={`option-team-name ${team.color.toLowerCase()}`}>
                             {team.name}
                           </span>
-                          <span className="option-avg">
-                            평균: {team.averageSkillLevel?.toFixed(1) || 'N/A'}
-                          </span>
+                          <div className="option-stats">
+                            <span className="option-avg">
+                              티어 평균: {team.averageTierScore?.toFixed(1) || 'N/A'}점
+                            </span>
+                            {team.balanceStatus && (
+                              <span className={`balance-status-small status-${team.balanceStatus}`}>
+                                {team.balanceStatus}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -505,9 +512,16 @@ function LolTeamBuilder() {
                 <div key={team.id} className={`team-card team-${team.color.toLowerCase()}`}>
                   <div className="team-header">
                     <h3>{team.name}</h3>
-                    <span className="team-avg">
-                      평균: {team.averageSkillLevel?.toFixed(1) || 'N/A'}
-                    </span>
+                    <div className="team-stats">
+                      <span className="team-avg">
+                        티어 평균: {team.averageTierScore?.toFixed(1) || 'N/A'}점
+                      </span>
+                      {team.balanceStatus && (
+                        <span className={`balance-status status-${team.balanceStatus}`}>
+                          {team.balanceStatus}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="team-members">
                     {team.members?.map(member => (
@@ -539,9 +553,16 @@ function LolTeamBuilder() {
                   <div key={index} className={`modal-team-card team-${team.color.toLowerCase()}`}>
                     <div className="team-header">
                       <h3>{team.name}</h3>
-                      <span className="team-avg">
-                        평균: {team.averageSkillLevel?.toFixed(1) || 'N/A'}
-                      </span>
+                      <div className="team-stats">
+                        <span className="team-avg">
+                          티어 평균: {team.averageTierScore?.toFixed(1) || 'N/A'}점
+                        </span>
+                        {team.balanceStatus && (
+                          <span className={`balance-status status-${team.balanceStatus}`}>
+                            {team.balanceStatus}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="team-members">
                       {team.members?.map((member, memberIndex) => (

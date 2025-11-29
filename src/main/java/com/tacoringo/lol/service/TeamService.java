@@ -154,10 +154,8 @@ public class TeamService {
         Team savedBlueTeam = teamRepository.save(blueTeam);
         Team savedRedTeam = teamRepository.save(redTeam);
 
-        return Arrays.asList(
-                TeamDto.from(savedBlueTeam),
-                TeamDto.from(savedRedTeam)
-        );
+        // 밸런스 상태 계산
+        return calculateBalanceAndCreateDtos(savedBlueTeam, savedRedTeam);
     }
 
     private Team selectTeamForPosition(Team blueTeam, Team redTeam, Champion.Position position,
@@ -320,11 +318,8 @@ public class TeamService {
             }
         }
 
-        // DB에 저장하지 않고 DTO로 반환
-        return Arrays.asList(
-                TeamDto.from(blueTeam),
-                TeamDto.from(redTeam)
-        );
+        // DB에 저장하지 않고 DTO로 반환 (밸런스 계산 포함)
+        return calculateBalanceForDtos(blueTeam, redTeam);
     }
 
     @Transactional
@@ -372,9 +367,73 @@ public class TeamService {
         Team savedBlueTeam = teamRepository.save(blueTeam);
         Team savedRedTeam = teamRepository.save(redTeam);
 
+        // 밸런스 상태 계산
+        return calculateBalanceAndCreateDtos(savedBlueTeam, savedRedTeam);
+    }
+
+    private List<TeamDto> calculateBalanceAndCreateDtos(Team team1, Team team2) {
+        double avg1 = team1.getMembers().stream()
+                .mapToDouble(m -> m.getPlayer().getTier().getValue())
+                .average()
+                .orElse(0.0);
+
+        double avg2 = team2.getMembers().stream()
+                .mapToDouble(m -> m.getPlayer().getTier().getValue())
+                .average()
+                .orElse(0.0);
+
+        double diff = Math.abs(avg1 - avg2);
+        String status1, status2;
+
+        if (diff <= 0.5) {
+            status1 = status2 = "약우세";
+        } else if (diff <= 1.0) {
+            status1 = avg1 > avg2 ? "우세" : "";
+            status2 = avg2 > avg1 ? "우세" : "";
+        } else if (diff <= 2.0) {
+            status1 = avg1 > avg2 ? "강우세" : "";
+            status2 = avg2 > avg1 ? "강우세" : "";
+        } else {
+            status1 = avg1 > avg2 ? "천국" : "지옥";
+            status2 = avg2 > avg1 ? "천국" : "지옥";
+        }
+
         return Arrays.asList(
-                TeamDto.from(savedBlueTeam),
-                TeamDto.from(savedRedTeam)
+                TeamDto.fromWithBalance(team1, status1),
+                TeamDto.fromWithBalance(team2, status2)
+        );
+    }
+
+    private List<TeamDto> calculateBalanceForDtos(Team team1, Team team2) {
+        double avg1 = team1.getMembers().stream()
+                .mapToDouble(m -> m.getPlayer().getTier().getValue())
+                .average()
+                .orElse(0.0);
+
+        double avg2 = team2.getMembers().stream()
+                .mapToDouble(m -> m.getPlayer().getTier().getValue())
+                .average()
+                .orElse(0.0);
+
+        double diff = Math.abs(avg1 - avg2);
+        String status1, status2;
+
+        if (diff <= 0.5) {
+            status1 = status2 = "약우세";
+        } else if (diff <= 1.0) {
+            status1 = avg1 > avg2 ? "우세" : "";
+            status2 = avg2 > avg1 ? "우세" : "";
+        } else if (diff <= 2.0) {
+            status1 = avg1 > avg2 ? "강우세" : "";
+            status2 = avg2 > avg1 ? "강우세" : "";
+        } else {
+            status1 = avg1 > avg2 ? "천국" : "지옥";
+            status2 = avg2 > avg1 ? "천국" : "지옥";
+        }
+
+        return Arrays.asList(
+                TeamDto.fromWithBalance(team1, status1),
+                TeamDto.fromWithBalance(team2, status2)
         );
     }
 

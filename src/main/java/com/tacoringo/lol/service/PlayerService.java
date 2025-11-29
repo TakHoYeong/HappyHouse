@@ -58,6 +58,10 @@ public class PlayerService {
         player.setRealName(playerDto.getRealName());
         player.setPreferredPosition(playerDto.getPreferredPosition());
         player.setSecondaryPosition(playerDto.getSecondaryPosition());
+        player.setTier(playerDto.getTier());
+        player.setPositionLocked(playerDto.getPositionLocked());
+        player.setAvailablePositions(playerDto.getAvailablePositions());
+        player.setUnavailablePositions(playerDto.getUnavailablePositions());
         player.setSkillLevel(playerDto.getSkillLevel());
         player.setNotes(playerDto.getNotes());
 

@@ -76,21 +76,21 @@ public class Player {
     }
 
     public enum Tier {
-        IRON("아이언", 1),
-        BRONZE("브론즈", 2),
-        SILVER("실버", 3),
-        GOLD("골드", 4),
-        PLATINUM("플래티넘", 5),
-        EMERALD("에메랄드", 6),
-        DIAMOND("다이아", 7),
-        MASTER("마스터", 8),
-        GRANDMASTER("그랜드마스터", 9),
-        CHALLENGER("챌린저", 10);
+        IRON("아이언", 1.0),
+        BRONZE("브론즈", 1.5),
+        SILVER("실버", 2.0),
+        GOLD("골드", 3.0),
+        PLATINUM("플래티넘", 4.0),
+        EMERALD("에메랄드", 5.0),
+        DIAMOND("다이아", 6.0),
+        MASTER("마스터", 8.0),
+        GRANDMASTER("그랜드마스터", 10.0),
+        CHALLENGER("챌린저", 12.0);
 
         private final String koreanName;
-        private final int value;
+        private final double value;
 
-        Tier(String koreanName, int value) {
+        Tier(String koreanName, double value) {
             this.koreanName = koreanName;
             this.value = value;
         }
@@ -99,7 +99,7 @@ public class Player {
             return koreanName;
         }
 
-        public int getValue() {
+        public double getValue() {
             return value;
         }
     }
