@@ -19,8 +19,15 @@ public class TeamDto {
     private String color;
     private List<TeamMemberDto> members;
     private Double averageSkillLevel;
+    private Double averageTierScore;
+    private String balanceStatus;
 
     public static TeamDto from(Team team) {
+        double avgTierScore = team.getMembers().stream()
+                .mapToDouble(member -> member.getPlayer().getTier().getValue())
+                .average()
+                .orElse(0.0);
+
         return TeamDto.builder()
                 .id(team.getId())
                 .name(team.getName())
@@ -29,6 +36,13 @@ public class TeamDto {
                         .map(TeamMemberDto::from)
                         .collect(Collectors.toList()))
                 .averageSkillLevel(team.getAverageSkillLevel())
+                .averageTierScore(avgTierScore)
                 .build();
+    }
+
+    public static TeamDto fromWithBalance(Team team, String balanceStatus) {
+        TeamDto dto = from(team);
+        dto.setBalanceStatus(balanceStatus);
+        return dto;
     }
 }
