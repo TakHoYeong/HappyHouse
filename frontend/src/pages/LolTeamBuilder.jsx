@@ -29,6 +29,7 @@ function LolTeamBuilder() {
   const [players, setPlayers] = useState([]);
   const [teams, setTeams] = useState([]);
   const [showPlayerForm, setShowPlayerForm] = useState(false);
+  const [editingPlayer, setEditingPlayer] = useState(null);
 
   const [newPlayer, setNewPlayer] = useState({
     summonerName: '',
@@ -68,7 +69,16 @@ function LolTeamBuilder() {
   const handleCreatePlayer = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_BASE_URL}/players`, newPlayer);
+      if (editingPlayer) {
+        // 수정 모드
+        await axios.put(`${API_BASE_URL}/players/${editingPlayer.id}`, newPlayer);
+        alert('플레이어가 수정되었습니다!');
+      } else {
+        // 등록 모드
+        await axios.post(`${API_BASE_URL}/players`, newPlayer);
+        alert('플레이어가 등록되었습니다!');
+      }
+
       setNewPlayer({
         summonerName: '',
         realName: '',
@@ -80,13 +90,45 @@ function LolTeamBuilder() {
         skillLevel: 5,
         notes: ''
       });
+      setEditingPlayer(null);
       fetchPlayers();
       setShowPlayerForm(false);
-      alert('플레이어가 등록되었습니다!');
     } catch (error) {
-      console.error('Error creating player:', error);
-      alert('플레이어 등록에 실패했습니다.');
+      console.error('Error saving player:', error);
+      alert('플레이어 저장에 실패했습니다.');
     }
+  };
+
+  const handleEditPlayer = (player) => {
+    setEditingPlayer(player);
+    setNewPlayer({
+      summonerName: player.summonerName,
+      realName: player.realName || '',
+      preferredPosition: player.preferredPosition,
+      positionLocked: player.positionLocked || false,
+      availablePositions: player.availablePositions || [],
+      unavailablePositions: player.unavailablePositions || [],
+      tier: player.tier || 'SILVER',
+      skillLevel: player.skillLevel || 5,
+      notes: player.notes || ''
+    });
+    setShowPlayerForm(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingPlayer(null);
+    setNewPlayer({
+      summonerName: '',
+      realName: '',
+      preferredPosition: 'TOP',
+      positionLocked: false,
+      availablePositions: [],
+      unavailablePositions: [],
+      tier: 'SILVER',
+      skillLevel: 5,
+      notes: ''
+    });
+    setShowPlayerForm(false);
   };
 
   const handleDeletePlayer = async (playerId) => {
@@ -179,16 +221,35 @@ function LolTeamBuilder() {
         <div className="left-panel">
           <div className="panel-header">
             <h2>플레이어 목록 ({players.length}/10)</h2>
-            <button
-              className="btn-primary"
-              onClick={() => setShowPlayerForm(!showPlayerForm)}
-            >
-              {showPlayerForm ? '취소' : '+ 플레이어 추가'}
-            </button>
+            <div className="header-buttons">
+              <button
+                className="btn-refresh"
+                onClick={fetchPlayers}
+                title="새로고침"
+              >
+                🔄 불러오기
+              </button>
+              <button
+                className="btn-primary"
+                onClick={() => {
+                  if (showPlayerForm && !editingPlayer) {
+                    setShowPlayerForm(false);
+                  } else {
+                    handleCancelEdit();
+                    setShowPlayerForm(!showPlayerForm);
+                  }
+                }}
+              >
+                {showPlayerForm ? '취소' : '+ 플레이어 추가'}
+              </button>
+            </div>
           </div>
 
           {showPlayerForm && (
             <form onSubmit={handleCreatePlayer} className="player-form">
+              <h3 className="form-title">
+                {editingPlayer ? '플레이어 수정' : '플레이어 등록'}
+              </h3>
               <div className="form-group">
                 <label>이름 *</label>
                 <input
@@ -268,8 +329,10 @@ function LolTeamBuilder() {
               </div>
 
               <div className="form-actions">
-                <button type="submit" className="btn-primary">등록</button>
-                <button type="button" className="btn-secondary" onClick={() => setShowPlayerForm(false)}>
+                <button type="submit" className="btn-primary">
+                  {editingPlayer ? '수정 완료' : '등록'}
+                </button>
+                <button type="button" className="btn-secondary" onClick={handleCancelEdit}>
                   취소
                 </button>
               </div>
@@ -281,12 +344,22 @@ function LolTeamBuilder() {
               <div key={player.id} className="player-card">
                 <div className="player-header">
                   <h3>{player.summonerName}</h3>
-                  <button
-                    className="btn-delete"
-                    onClick={() => handleDeletePlayer(player.id)}
-                  >
-                    ✕
-                  </button>
+                  <div className="player-actions">
+                    <button
+                      className="btn-edit"
+                      onClick={() => handleEditPlayer(player)}
+                      title="수정"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      className="btn-delete"
+                      onClick={() => handleDeletePlayer(player.id)}
+                      title="삭제"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
                 <div className="player-info">
                   <span className={`tier-badge tier-${player.tier?.toLowerCase()}`}>
