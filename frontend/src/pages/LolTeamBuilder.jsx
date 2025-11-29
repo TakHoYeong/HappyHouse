@@ -261,6 +261,18 @@ function LolTeamBuilder() {
     return POSITIONS.find(p => p.value === position)?.label || position;
   };
 
+  const getPositionOrder = (position) => {
+    const order = { 'TOP': 0, 'JUNGLE': 1, 'MID': 2, 'ADC': 3, 'SUPPORT': 4 };
+    return order[position] ?? 999;
+  };
+
+  const sortMembersByPosition = (members) => {
+    if (!members) return [];
+    return [...members].sort((a, b) =>
+      getPositionOrder(a.assignedPosition) - getPositionOrder(b.assignedPosition)
+    );
+  };
+
   return (
     <div className="lol-team-builder">
       <header className="header">
@@ -524,7 +536,7 @@ function LolTeamBuilder() {
                     </div>
                   </div>
                   <div className="team-members">
-                    {team.members?.map(member => (
+                    {sortMembersByPosition(team.members).map(member => (
                       <div key={member.id} className="member-item">
                         <span className="member-position">
                           {getPositionLabel(member.assignedPosition)}
@@ -565,7 +577,7 @@ function LolTeamBuilder() {
                       </div>
                     </div>
                     <div className="team-members">
-                      {team.members?.map((member, memberIndex) => (
+                      {sortMembersByPosition(team.members).map((member, memberIndex) => (
                         <div key={memberIndex} className="member-item">
                           <span className="member-position">
                             {getPositionLabel(member.assignedPosition)}
