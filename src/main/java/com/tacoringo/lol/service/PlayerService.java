@@ -57,7 +57,6 @@ public class PlayerService {
         player.setSummonerName(playerDto.getSummonerName());
         player.setRealName(playerDto.getRealName());
         player.setPreferredPosition(playerDto.getPreferredPosition());
-        player.setSecondaryPosition(playerDto.getSecondaryPosition());
         player.setTier(playerDto.getTier());
         player.setPositionLocked(playerDto.getPositionLocked());
         player.setAvailablePositions(playerDto.getAvailablePositions());
