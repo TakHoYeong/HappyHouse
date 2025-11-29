@@ -176,11 +176,11 @@ public class TeamService {
         }
 
         // 두 팀 모두 비어있으면 티어 합이 더 낮은 팀에 배치
-        int blueTierSum = teamAssignments.get(blueTeam).values().stream()
-                .mapToInt(p -> p.getTier().getValue())
+        double blueTierSum = teamAssignments.get(blueTeam).values().stream()
+                .mapToDouble(p -> p.getTier().getValue())
                 .sum();
-        int redTierSum = teamAssignments.get(redTeam).values().stream()
-                .mapToInt(p -> p.getTier().getValue())
+        double redTierSum = teamAssignments.get(redTeam).values().stream()
+                .mapToDouble(p -> p.getTier().getValue())
                 .sum();
 
         return blueTierSum <= redTierSum ? blueTeam : redTeam;

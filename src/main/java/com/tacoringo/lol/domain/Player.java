@@ -33,6 +33,7 @@ public class Player {
     private Champion.Position preferredPosition;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean positionLocked = false;
 
     @ElementCollection(fetch = FetchType.EAGER)
@@ -51,6 +52,7 @@ public class Player {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private Tier tier = Tier.SILVER;
 
     @Column(nullable = false)
